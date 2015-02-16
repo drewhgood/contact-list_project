@@ -12,7 +12,7 @@ when "help"
     show - Show a contact
     find - Find a contact\n"
 when "new"
-  p "Enter Email: "
+  p "Enter Email:"
   email = STDIN.gets.chomp 
   if Contact.check_for_duplicates(email)
     p 'Contact already exists'
@@ -41,12 +41,4 @@ when "show"
   Contact.show(arg2)
 else
   puts "nothing happened"
-end
-
-
-class Application
-
-
-
-
 end

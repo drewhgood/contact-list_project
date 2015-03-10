@@ -5,13 +5,26 @@ require 'colorize'
 
 arg1, arg2 = ARGV
 
-def validate_email(email)
-  email.match(/^\S+@\S+\.\S+$/) != nil
+def invalid_email?(email)
+  email.match(/^\S+@\S+\.\S+$/) == nil
 end
 
 def validate_phone(phone)
   phone.to_s.match(/^(?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?([0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(\d+))?$/) != nil
 end 
+
+def gather_input
+  STDIN.gets.chomp
+end 
+
+def success(name, email, phones)
+  puts "Success! You added:".colorize(:green)
+  puts "#{name}: #{email}".colorize(:green)
+  
+  phones.each do |type, number|
+    print"#{type}: #{number} | ".colorize(:green)
+  end
+end
 
 def prompt(action)
   if action == 'name'
@@ -29,66 +42,56 @@ def prompt(action)
   elsif action == 'invalid_phone'
     puts "Not a valid phone number. Try again.".colorize(:red)
   elsif action == 'invalid_email'
-    puts "Not a valid email address.".colorize(:red)
+    puts "Address already exists, or is not valid.".colorize(:red)
   end
 end
 
 case arg1
+  when "help"
+    puts "Here is a list of available commands:
+      new  - Create a new contact
+      list - List all contacts
+      show - Show a contact
+      find - Find a contact"
 
-when "help"
-  puts "Here is a list of available commands:
-    new  - Create a new contact
-    list - List all contacts
-    show - Show a contact
-    find - Find a contact"
+  when "new"
+    prompt('email')
+    email = gather_input
 
-when "new"
-  prompt('email')
-  email = STDIN.gets.chomp 
-
-  if validate_email(email)
-    if Contact.check_for_duplicates(email)
-      puts 'Contact already exists!'.colorize(:red)
+    if invalid_email?(email) || Contact.check_for_duplicates(email)
+      prompt('invalid_email')
 
     else
       prompt('name')
-      name = STDIN.gets.chomp
-
+      name = gather_input
       prompt('phone_new')
       additional_phone_numbers = true
       phones ={}
 
       while additional_phone_numbers
         prompt('phone_type')
-        type = STDIN.gets.chomp
+        type = gather_input
         prompt('phone_number')
-        number = STDIN.gets.chomp
+        number = gather_input
+
         if validate_phone(number.to_s)
           phones[type] = number
           prompt('phone_again?')
-          response = STDIN.gets.chomp.downcase
-          response == 'y' ? additional_phone_numbers = true : additional_phone_numbers = false
+          additional_phone_numbers = false if gather_input.downcase != 'y'
         else
           prompt('invalid_phone')
         end
       end
-
-      contact = Contact.create(name,email, phones)
+     Contact.create(name, email, phones)
+     success(name, email, phones)
     end
 
+  when "list"
+    Contact.list
+  when "find"
+    Contact.find(arg2)
+  when "show"
+    Contact.show(arg2)
   else
-   prompt('invalid_email')
-  end
-
-when "list"
-  Contact.list
-
-when "find"
-  Contact.find(arg2)
-
-when "show"
-  Contact.show(arg2)
-
-else
-  puts "Try gain, or enter 'help' for more options"
+    puts "Try gain, or enter 'help' for more options"
 end
